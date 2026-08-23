@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>777 룰렛</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri/dist/galmuri.css">
+<style>
+@font-face{
+  font-family:'DepartureMono';
+  src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2409-1@1.0/DepartureMono-Regular.woff2') format('woff2');
+  font-weight:normal;
+  font-display:swap;
+}
+/* ══════════════════════════════════════════════════════════
+   777 룰렛 — 가로형 3단 릴
+   ══════════════════════════════════════════════════════════ */
+:root{
+  --wood-darkest:#2e1c0d;
+  --wood-dark:#4e3018;
+  --wood:#6f4626;
+  --wood-mid:#8a5c34;
+  --wood-light:#b07f4a;
+  --wood-lightest:#dcb27c;
+
+  --grass:#6cbf4a;
+  --grass-dark:#3f8529;
+  --grass-light:#93dd68;
+  --path:#e6d4a2;
+  --path-alt:#d2bb82;
+
+  --reel:#faf6ea;
+  --reel-shade:#ded3b8;
+  --reel-deep:#c4b694;
+
+  --red:#cf3a3a;
+  --red-dark:#89201f;
+  --red-light:#f07a7a;
+  --green:#3fa845;
+  --blue:#3d7fd0;
+  --gold:#f7cd57;
+  --gold-mid:#e0a92e;
+  --gold-dark:#a97a17;
+  --metal:#b3bcc6;
+  --metal-mid:#87919c;
+  --metal-dark:#4f5862;
+  --ink:#2a1a0d;
+
+  --cell:128px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--grass);
+  font-family:'DepartureMono','Galmuri11','DungGeunMo',monospace;
+  color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+  image-rendering:pixelated;
+}
+
+/* ── 배경 ────────────────────────────────────────────────── */
+.field{
+  position:fixed;inset:0;
+  background:
+    repeating-linear-gradient(0deg,transparent 0 14px,rgba(255,255,255,.045) 14px 16px),
+    repeating-linear-gradient(90deg,transparent 0 12px,rgba(0,0,0,.03) 12px 24px),
+    linear-gradient(180deg,var(--grass-light) 0%,var(--grass) 46%,var(--grass-dark) 100%);
+}
+.path{
+  position:fixed;left:-25%;right:-25%;bottom:0;height:34%;
+  background:repeating-conic-gradient(var(--path) 0% 25%,var(--path-alt) 0% 50%) 0 0/60px 60px;
+  transform:perspective(320px) rotateX(61deg);
+  transform-origin:bottom center;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22%);
+  mask-image:linear-gradient(180deg,transparent 0,#000 22%);
+}
+.vignette{position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 44%,transparent 42%,rgba(24,52,14,.3) 100%)}
+
+/* ── 스테이지 ────────────────────────────────────────────── */
+.stage{position:relative;width:880px;height:812px;transform-origin:center center}
+.stage.shake{animation:shake .3s steps(2,end) 2}
+@keyframes shake{0%,100%{transform:translate(0,0)}50%{transform:translate(0,3px)}}
+.shadow{position:absolute;left:70px;top:804px;width:640px;height:26px;
+  background:rgba(18,46,10,.3);border-radius:50%;filter:blur(1px)}
+
+/* ── 캐비닛 ──────────────────────────────────────────────── */
+.cabinet{
+  position:absolute;left:20px;top:0;width:720px;height:780px;
+  background:linear-gradient(90deg,
+    var(--wood-dark) 0 14px,
+    var(--wood) 14px 34px,
+    var(--wood-mid) 34px 628px,
+    var(--wood) 628px 686px,
+    var(--wood-dark) 606px 100%);
+  border:8px solid var(--wood-darkest);
+  border-radius:78px 78px 12px 12px;
+  box-shadow:
+    inset 0 9px 0 rgba(255,255,255,.16),
+    inset 0 -16px 0 rgba(0,0,0,.24),
+    inset -22px 0 0 rgba(0,0,0,.1),
+    16px 18px 0 rgba(0,0,0,.22);
+}
+.side{
+  position:absolute;right:-30px;top:64px;width:34px;height:716px;
+  background:linear-gradient(90deg,var(--wood) 0 10px,var(--wood-dark) 10px 100%);
+  border:8px solid var(--wood-darkest);border-left:none;border-radius:0 12px 12px 0;
+  box-shadow:inset 0 9px 0 rgba(255,255,255,.1),inset 0 -12px 0 rgba(0,0,0,.2);
+}
+.grain{position:absolute;inset:0;border-radius:70px 70px 8px 8px;overflow:hidden;opacity:.3}
+.grain i{position:absolute;background:var(--wood-dark);height:3px;border-radius:3px}
+/* 세로 몰딩 */
+.molding{
+  position:absolute;top:150px;bottom:20px;width:12px;
+  background:linear-gradient(90deg,rgba(0,0,0,.24) 0 4px,rgba(255,255,255,.12) 4px 7px,rgba(0,0,0,.18) 7px 12px);
+  border-radius:2px;
+}
+.bolt{position:absolute;width:15px;height:15px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,var(--metal),var(--metal-dark));
+  box-shadow:0 0 0 3px var(--wood-darkest),inset 0 -3px 0 rgba(0,0,0,.35)}
+
+/* ── 상단 마퀴 밴드 ──────────────────────────────────────── */
+.band-wrap{position:absolute;left:60px;top:24px;width:668px;height:116px}
+.band{
+  position:absolute;inset:0;overflow:hidden;
+  border:6px solid var(--wood-darkest);border-bottom:none;
+  border-radius:56px 56px 0 0;background:var(--reel);
+  box-shadow:inset 0 -10px 0 rgba(0,0,0,.1),0 6px 0 rgba(0,0,0,.18);
+  display:grid;place-items:center;
+}
+.fan{position:absolute;left:50%;bottom:-16px;width:0;height:0}
+.fan span{
+  position:absolute;left:0;bottom:0;width:0;height:0;
+  border-left:48px solid transparent;border-right:48px solid transparent;
+  border-bottom:168px solid var(--red);
+  transform-origin:50% 100%;margin-left:-48px;
+}
+.fan span.pale{border-bottom-color:var(--reel-shade)}
+
+.sign{position:relative;display:grid;justify-items:center;gap:7px}
+.digits{display:flex;gap:11px}
+.digits span{
+  width:62px;height:74px;display:grid;place-items:center;
+  font-family:'DepartureMono',monospace;
+  font-size:48px;line-height:1;color:var(--gold);
+  background:linear-gradient(180deg,#1a0f05,#33200f);
+  border:4px solid var(--wood-dark);border-radius:5px;
+  box-shadow:inset 0 5px 9px rgba(0,0,0,.8),0 3px 0 rgba(255,255,255,.18);
+  text-shadow:0 3px 0 var(--gold-dark),0 0 14px rgba(247,205,87,.55);
+}
+/* 곡선을 따라 도는 전구 */
+.bulbs{position:absolute;left:0;top:0;width:668px;height:116px;pointer-events:none}
+.bulbs i{
+  position:absolute;width:13px;height:13px;margin:-6px 0 0 -6px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff3cc,var(--gold) 55%,var(--gold-mid));
+  box-shadow:0 0 0 3px var(--wood-darkest);
+  opacity:.3;transition:opacity .1s steps(2,end);
+}
+.bulbs i.on{opacity:1;box-shadow:0 0 0 3px var(--wood-darkest),0 0 15px 4px rgba(247,205,87,.65)}
+
+/* ── 릴 (가로 3단) ───────────────────────────────────────── */
+.window-wrap{position:absolute;left:60px;top:152px;width:668px;height:426px}
+.frame{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,var(--wood-light),var(--wood) 62%,var(--wood-dark));
+  border:6px solid var(--wood-darkest);border-radius:12px;
+  box-shadow:inset 0 5px 0 rgba(255,255,255,.28),inset 0 -6px 0 rgba(0,0,0,.2),0 8px 0 rgba(0,0,0,.2);
+}
+.window{position:absolute;left:13px;top:13px;right:13px;bottom:13px;
+  display:flex;flex-direction:column;gap:8px}
+.reel{
+  position:relative;height:var(--cell);overflow:hidden;border-radius:3px;
+  background:linear-gradient(180deg,var(--reel-deep) 0,var(--reel) 19%,var(--reel) 81%,var(--reel-deep) 100%);
+  box-shadow:0 0 0 4px var(--wood-darkest),inset 0 6px 10px rgba(0,0,0,.17),inset 0 -6px 0 rgba(255,255,255,.5);
+}
+.reel.bump{animation:bump .17s steps(3,end)}
+.reel.tense{animation:tense .42s steps(2,end) infinite}
+@keyframes tense{
+  0%,100%{box-shadow:0 0 0 4px var(--wood-darkest),inset 0 6px 10px rgba(0,0,0,.17),inset 0 -6px 0 rgba(255,255,255,.5)}
+  50%{box-shadow:0 0 0 4px var(--gold),inset 0 6px 10px rgba(0,0,0,.17),inset 0 -6px 0 rgba(255,255,255,.5),0 0 22px rgba(247,205,87,.6)}
+}
+@keyframes bump{0%{transform:translateY(-5px)}55%{transform:translateY(3px)}100%{transform:translateY(0)}}
+.strip{position:absolute;left:0;top:0;width:100%}
+.sym{height:var(--cell);display:grid;place-items:center;padding:0 30px}
+.sym img{
+  max-width:100%;max-height:calc(var(--cell) - 28px);
+  width:auto;height:auto;object-fit:contain;image-rendering:auto;
+  -webkit-user-drag:none;user-select:none;
+}
+.glare{position:absolute;inset:13px;pointer-events:none;border-radius:4px;
+  background:linear-gradient(114deg,rgba(255,255,255,.3) 0 11%,transparent 11% 23%,
+             rgba(255,255,255,.14) 23% 28%,transparent 28%)}
+/* 페이라인 브래킷 */
+.bracket{position:absolute;top:30px;bottom:30px;width:15px;pointer-events:none}
+.bracket b,.bracket i{position:absolute;background:var(--gold);
+  box-shadow:0 0 0 3px var(--wood-darkest),inset 0 -2px 0 var(--gold-mid)}
+.bracket b{left:0;right:0;height:6px}
+.bracket b.t{top:0}.bracket b.m{bottom:0}
+.bracket i{top:0;bottom:0;width:6px}
+.bracket.l{left:-23px}.bracket.l i{left:0}
+.bracket.r{right:-23px}.bracket.r i{right:0}
+.window.hit .reel{animation:hitflash .26s steps(2,end) 8}
+@keyframes hitflash{0%,100%{background:var(--reel)}50%{background:var(--gold)}}
+
+/* ── 컨트롤 패널 ─────────────────────────────────────────── */
+.panel{
+  position:absolute;left:60px;top:594px;width:668px;height:88px;
+  background:linear-gradient(180deg,var(--wood-lightest),var(--wood-light) 38%,var(--wood));
+  border:6px solid var(--wood-darkest);border-radius:11px;
+  display:flex;align-items:center;gap:20px;padding:0 24px;
+  box-shadow:inset 0 6px 0 rgba(255,255,255,.32),inset 0 -9px 0 rgba(0,0,0,.17),0 8px 0 rgba(0,0,0,.22);
+}
+.btn-red{
+  width:54px;height:54px;border-radius:50%;flex:none;cursor:pointer;position:relative;
+  background:radial-gradient(circle at 34% 28%,var(--red-light),var(--red) 55%,var(--red-dark));
+  border:none;box-shadow:0 0 0 5px var(--wood-darkest),0 7px 0 var(--red-dark),inset 0 -5px 0 rgba(0,0,0,.22);
+  transition:transform .06s steps(2,end),box-shadow .06s steps(2,end);
+}
+.btn-red::after{content:'';position:absolute;left:12px;top:9px;width:13px;height:9px;
+  border-radius:50%;background:rgba(255,255,255,.5)}
+.btn-red:active{transform:translateY(6px);box-shadow:0 0 0 5px var(--wood-darkest),0 1px 0 var(--red-dark)}
+.btn-red:disabled{cursor:not-allowed;filter:saturate(.45) brightness(.9)}
+.lights{display:flex;gap:11px;flex:1}
+.lights i{flex:1;height:22px;background:var(--green);opacity:.3;border-radius:3px;
+  box-shadow:0 0 0 4px var(--wood-darkest),inset 0 -4px 0 rgba(0,0,0,.28)}
+.lights i.b{background:var(--blue)}
+.lights i.on{opacity:1;
+  box-shadow:0 0 0 4px var(--wood-darkest),inset 0 -4px 0 rgba(0,0,0,.2),0 0 12px rgba(255,255,255,.4)}
+
+/* ── 트레이 · 받침 ───────────────────────────────────────── */
+.slot{position:absolute;left:580px;top:702px;width:70px;height:22px;border-radius:3px;
+  background:#150c04;box-shadow:0 0 0 4px var(--wood-dark),inset 0 5px 9px rgba(0,0,0,.85)}
+.tray{
+  position:absolute;left:230px;top:694px;width:300px;height:64px;border-radius:5px;
+  background:linear-gradient(180deg,#170d04,#2e1c0d);
+  box-shadow:0 0 0 6px var(--wood-dark),inset 0 13px 20px rgba(0,0,0,.75),0 8px 0 rgba(0,0,0,.16);
+  display:grid;place-items:center;color:var(--wood-lightest);
+  font-size:17px;letter-spacing:2px;
+}
+.tray.win-glow{color:var(--gold);text-shadow:0 0 16px rgba(247,205,87,.9)}
+.plinth{position:absolute;left:4px;top:774px;width:752px;height:34px;border-radius:7px;
+  background:linear-gradient(180deg,var(--wood-mid),var(--wood-dark) 60%,var(--wood-darkest));
+  box-shadow:0 0 0 7px var(--wood-darkest),inset 0 5px 0 rgba(255,255,255,.14)}
+
+/* ── 레버 ────────────────────────────────────────────────── */
+.lever{position:absolute;left:722px;top:300px;width:150px;height:290px;
+  cursor:pointer;background:none;border:0;padding:0}
+/* 캐비닛에 붙는 마운트 브래킷 */
+.lever-plate{
+  position:absolute;left:44px;top:224px;width:60px;height:52px;border-radius:6px;
+  background:linear-gradient(180deg,var(--metal),var(--metal-mid) 55%,var(--metal-dark));
+  box-shadow:0 0 0 5px var(--wood-darkest),inset 0 4px 0 rgba(255,255,255,.4),inset 0 -5px 0 rgba(0,0,0,.3);
+}
+.lever-plate i{position:absolute;width:8px;height:8px;border-radius:50%;
+  background:var(--metal-dark);box-shadow:inset 0 2px 0 rgba(0,0,0,.5)}
+.lever-rot{position:absolute;inset:0;transform-origin:74px 250px;
+  transition:transform .16s steps(4,end)}
+.lever.pulled .lever-rot{transform:rotate(46deg)}
+.lever.springing .lever-rot{transition:transform .34s cubic-bezier(.3,1.5,.6,1)}
+.lever-arm{
+  position:absolute;left:66px;top:106px;width:17px;height:144px;border-radius:2px;
+  background:linear-gradient(90deg,
+    var(--metal-dark) 0 3px,var(--metal-mid) 3px 6px,var(--metal) 6px 9px,
+    #e6ecf2 9px 11px,var(--metal-mid) 11px 14px,var(--metal-dark) 14px 17px);
+  box-shadow:0 0 0 4px var(--wood-darkest);
+}
+/* 축 쪽 페룰 */
+.ferrule{position:absolute;left:-4px;bottom:14px;width:25px;height:22px;border-radius:3px;
+  background:linear-gradient(180deg,var(--gold),var(--gold-mid) 55%,var(--gold-dark));
+  box-shadow:0 0 0 4px var(--wood-darkest),inset 0 3px 0 rgba(255,255,255,.4)}
+.lever-knob{
+  position:absolute;left:40px;top:42px;width:68px;height:68px;border-radius:50%;
+  background:radial-gradient(circle at 33% 27%,var(--wood-lightest),var(--wood-mid) 50%,var(--wood-dark) 82%);
+  box-shadow:0 0 0 5px var(--wood-darkest),inset -7px -9px 0 rgba(0,0,0,.2);
+}
+.lever-knob i{position:absolute;left:15px;top:13px;width:15px;height:11px;border-radius:50%;
+  background:rgba(255,255,255,.55)}
+.lever-pivot{position:absolute;left:64px;top:240px;width:20px;height:20px;border-radius:50%;
+  background:radial-gradient(circle at 34% 30%,var(--metal),var(--metal-dark));
+  box-shadow:0 0 0 4px var(--wood-darkest)}
+.lever:disabled{cursor:not-allowed;filter:saturate(.7)}
+.lever:focus-visible,.btn-red:focus-visible{outline:5px solid var(--gold);outline-offset:6px}
+
+
+/* ── 오버레이 ────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;display:none;place-items:center;background:rgba(18,9,3,.76);padding:20px;z-index:20}
+.overlay.show{display:grid}
+.card{width:min(420px,92vw);background:var(--reel);position:relative;text-align:center;
+  padding:36px 28px;box-shadow:0 0 0 8px var(--wood-darkest),0 14px 0 rgba(0,0,0,.35)}
+.card::before{content:'';position:absolute;inset:8px;border:3px solid var(--reel-shade);pointer-events:none}
+.card img{max-width:74%;max-height:98px;margin:0 auto 20px;display:block;image-rendering:auto}
+.card img[hidden]{display:none}   /* .card img 의 display:block 을 눌러야 한다 */
+.card h2{font-size:27px;margin-bottom:12px;color:var(--wood-darkest)}
+.card p{font-size:15px;line-height:2;color:#4a3a2a}
+.card button{margin-top:26px;width:100%;padding:16px;font-family:inherit;font-size:16px;color:#fff;
+  cursor:pointer;background:var(--red);border:none;
+  box-shadow:0 0 0 5px var(--wood-darkest),0 7px 0 var(--red-dark)}
+.card button:active{transform:translateY(6px);box-shadow:0 0 0 5px var(--wood-darkest),0 1px 0 var(--red-dark)}
+.card.win{background:var(--gold)}
+.card.win::before{border-color:rgba(255,255,255,.55)}
+.card.win h2{color:#4a2f04}
+
+.admin{position:fixed;left:10px;top:10px;z-index:30;display:none;
+  background:rgba(18,9,3,.93);color:var(--reel);box-shadow:0 0 0 4px var(--gold);
+  padding:13px 15px;font-size:13px;line-height:1.9}
+.admin.show{display:block}
+.admin button{font-family:inherit;font-size:12px;margin-top:8px;margin-right:5px;
+  padding:6px 10px;cursor:pointer;background:var(--red);color:#fff;border:none;
+  box-shadow:0 0 0 3px #000}
+
+@media (prefers-reduced-motion:reduce){
+  .window.hit .reel{animation:none;background:var(--gold)}
+  .reel.bump{animation:none}
+  .reel.tense{animation:none}
+  .stage.shake{animation:none}
+  .bulbs i{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="field"></div>
+<div class="path"></div>
+<div class="vignette"></div>
+
+<div class="stage" id="stage">
+  <div class="shadow"></div>
+
+  <div class="cabinet">
+    <div class="grain" id="grain"></div>
+    <div class="molding" style="left:40px"></div>
+    <div class="molding" style="right:40px"></div>
+    <div class="bolt" style="left:22px;top:214px"></div>
+    <div class="bolt" style="right:22px;top:214px"></div>
+    <div class="bolt" style="left:22px;top:712px"></div>
+    <div class="bolt" style="right:22px;top:712px"></div>
+    <div class="side"></div>
+  </div>
+
+  <div class="band-wrap">
+    <div class="band">
+      <div class="fan" id="fan"></div>
+      <div class="sign">
+        <div class="digits"><span>7</span><span>7</span><span>7</span></div>
+      </div>
+    </div>
+    <div class="bulbs" id="bulbs"></div>
+  </div>
+
+  <div class="window-wrap">
+    <div class="frame"></div>
+    <div class="window" id="window">
+      <div class="reel"><div class="strip" id="s0"></div></div>
+      <div class="reel"><div class="strip" id="s1"></div></div>
+      <div class="reel"><div class="strip" id="s2"></div></div>
+    </div>
+    <div class="glare"></div>
+    <div class="bracket l"><b class="t"></b><i></i><b class="m"></b></div>
+    <div class="bracket r"><b class="t"></b><i></i><b class="m"></b></div>
+  </div>
+
+  <div class="panel">
+    <button class="btn-red" id="btnSpin" aria-label="돌리기"></button>
+    <div class="lights" id="lights"><i class="b"></i><i></i><i class="b"></i><i></i><i class="b"></i><i></i><i class="b"></i></div>
+  </div>
+
+  <div class="tray" id="tray">PULL THE LEVER</div>
+  <div class="slot"></div>
+  <div class="plinth"></div>
+
+  <button class="lever" id="lever" aria-label="레버 당기기">
+    <span class="lever-plate">
+      <i style="left:7px;top:7px"></i><i style="right:7px;top:7px"></i>
+      <i style="left:7px;bottom:7px"></i><i style="right:7px;bottom:7px"></i>
+    </span>
+    <span class="lever-rot">
+      <span class="lever-knob"><i></i></span>
+      <span class="lever-arm"><span class="ferrule"></span></span>
+    </span>
+    <span class="lever-pivot"></span>
+  </button>
+
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card" id="card">
+    <img id="resImg" alt="" hidden>
+    <h2 id="resTitle"></h2>
+    <p id="resBody"></p>
+    <button id="resClose">닫기</button>
+  </div>
+</div>
+
+<div class="admin" id="admin">
+  <div id="adminInfo">불러오는 중…</div>
+  <button id="adRefresh">새로고침</button>
+  <button id="adForce">강제 당첨</button>
+  <button id="adReset">카운터 리셋</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   설정
+   ══════════════════════════════════════════════════════════ */
+
+// Apps Script 웹앱 URL. 비워두면 데모 모드(1등 안 나옴).
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzt3-R8qrL6wLCfd8HyCrBfv9r19dzL8hBrHR6CWBrMF57ODb48M2JSIDn6IG_UR4lb/exec';
+
+// 심볼 7개. 마지막(index 6)이 대학교 = 1등.
+const SYMBOLS = [
+  { name:'ARCHIV',     img:'logos/archiv.png'     },
+  { name:'RoutineFit', img:'logos/routinefit.png' },
+  { name:'LinkBoard',  img:'logos/linkboard.png'  },
+  { name:'M·Carry',    img:'logos/mcarry.png'     },
+  { name:'bridgenote', img:'logos/bridgenote.png' },
+  { name:'대나무팀',    img:'logos/bamboo.png'     },
+  { name:'한국외대',    img:'logos/univ.png'       }   // ← 1등
+];
+const UNIV = SYMBOLS.length - 1;
+
+// 팀 로고 3개가 맞는 연출. 상품은 없고 재미 요소로만 쓴다.
+// 0 으로 두면 이 연출 자체가 사라진다.
+const SECOND_PRIZE_RATE = 0.09;
+const ONE_SPIN_PER_DEVICE = false;
+
+// ── 타이밍 ─────────────────────────────────────────────
+// 각 줄이 감속을 시작해서 멈추기까지 (ms). 위 → 아래 순서.
+const SPIN_TIME = [3200, 4300, 5600];
+
+// 위 두 줄이 같은 로고면 마지막 줄을 이만큼 더 끈다 (ms).
+const TENSE_TIME = 8600;
+
+// 릴이 멈춘 뒤 결과창이 뜨기까지 (ms)
+const RESULT_DELAY = { win: 2600, lose: 1400 };
+const TEAM = new URLSearchParams(location.search).get('team') || '';
+
+/* ══════════════════════════════════════════════════════════
+   장식
+   ══════════════════════════════════════════════════════════ */
+(function decor(){
+  const g=document.getElementById('grain');
+  for(let i=0;i<44;i++){
+    const b=document.createElement('i');
+    b.style.top=(5+Math.random()*92)+'%';
+    b.style.left=(3+Math.random()*74)+'%';
+    b.style.width=(5+Math.random()*30)+'%';
+    g.appendChild(b);
+  }
+  const fan=document.getElementById('fan');
+  for(let i=0;i<9;i++){
+    const s=document.createElement('span');
+    if(i%2) s.className='pale';
+    s.style.transform='rotate('+((i-4)*20)+'deg)';
+    fan.appendChild(s);
+  }
+
+  // 밴드의 둥근 윤곽선을 따라 전구를 배치한다.
+  // 경로: 왼쪽 측면 → 왼쪽 모서리 호 → 상단 직선 → 오른쪽 호 → 오른쪽 측면
+  const W=668, R=56, SIDE=44;
+  const arc=Math.PI*R/2, top=W-2*R;
+  const total=SIDE+arc+top+arc+SIDE;
+  function pointAt(d){
+    if(d<SIDE) return [0, R+SIDE-d];
+    d-=SIDE;
+    if(d<arc){ const a=d/R; return [R-R*Math.cos(a), R-R*Math.sin(a)]; }
+    d-=arc;
+    if(d<top) return [R+d, 0];
+    d-=top;
+    if(d<arc){ const a=d/R; return [W-R+R*Math.sin(a), R-R*Math.cos(a)]; }
+    d-=arc;
+    return [W, R+(d)];
+  }
+  const bulbs=document.getElementById('bulbs');
+  const N=25;
+  for(let i=0;i<N;i++){
+    const p=pointAt(total*i/(N-1));
+    const el=document.createElement('i');
+    el.style.left=p[0]+'px';
+    el.style.top=p[1]+'px';
+    bulbs.appendChild(el);
+  }
+})();
+
+const bulbEls=[].slice.call(document.querySelectorAll('#bulbs i'));
+let bulbPhase=0, bulbMode='idle';
+setInterval(function(){
+  bulbPhase++;
+  bulbEls.forEach(function(b,i){
+    const on = bulbMode==='win'  ? ((bulbPhase%2)===0)
+             : bulbMode==='spin' ? (((i+bulbPhase)%3)===0)
+             :                     (((i+bulbPhase)%6)===0);
+    b.classList.toggle('on',on);
+  });
+},210);
+
+/* ══════════════════════════════════════════════════════════
+   릴
+   ══════════════════════════════════════════════════════════ */
+// 칸 높이는 CSS 변수 --cell 에서 그대로 읽어온다.
+// (JS 에 숫자를 따로 적어두면 CSS 만 고쳤을 때 정렬이 어긋난다)
+const CELL = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell'),10);
+const LOOPS = 14;
+const strips=[0,1,2].map(function(i){return document.getElementById('s'+i)});
+
+(function buildStrips(){
+  strips.forEach(function(strip){
+    let html='';
+    for(let l=0;l<LOOPS;l++){
+      SYMBOLS.forEach(function(s){
+        html+='<div class="sym"><img src="'+s.img+'" alt="'+s.name+'" draggable="false"></div>';
+      });
+    }
+    strip.innerHTML=html;
+    strip.style.transition='none';
+    // 대기 화면은 1등 심볼로 시작한다
+    strip.style.transform='translateY('+(-(UNIV*CELL))+'px)';
+  });
+})();
+
+// 심볼 배열 한 바퀴 길이. 스트립이 이 간격으로 반복되므로
+// 이만큼 이동한 뒤 0 으로 되돌아가면 이음매가 보이지 않는다.
+const PERIOD = SYMBOLS.length * CELL;
+(function injectRoll(){
+  const st=document.createElement('style');
+  st.textContent='@keyframes roll{from{transform:translateY(0)}to{transform:translateY(-'+PERIOD+'px)}}';
+  document.head.appendChild(st);
+})();
+
+/** 스트립의 현재 translateY 값 (애니메이션 중에도 실제 위치를 읽는다) */
+function currentY(strip){
+  const t=getComputedStyle(strip).transform;
+  if(!t || t==='none') return 0;
+  const m=t.match(/matrix\(([^)]+)\)/);
+  return m ? parseFloat(m[1].split(',')[5]) : 0;
+}
+
+/** 서버 응답을 기다리는 동안 릴을 계속 돌린다 */
+function startRoll(strip,speed){
+  // 현재 위치에 해당하는 지점부터 루프가 시작되도록 음수 딜레이를 준다.
+  // 이렇게 하지 않으면 대기 화면에서 0 으로 튀는 게 보인다.
+  const frac=((-currentY(strip))%PERIOD)/PERIOD;
+  strip.style.transition='none';
+  strip.style.animation='none';
+  void strip.offsetHeight;
+  strip.style.animation='roll '+speed+'ms linear infinite';
+  strip.style.animationDelay=(-speed*frac)+'ms';
+}
+
+/** 현재 위치에서 이어서 감속하며 target 심볼에 착지 */
+function land(strip,target,duration,easing){
+  return new Promise(function(resolve){
+    const cur=currentY(strip);
+    // 착지 지점을 현재 위치보다 최소 3바퀴 아래로 잡는다
+    let y=-(target*CELL);
+    while(y > cur - PERIOD*3) y-=PERIOD;
+
+    strip.style.animation='none';
+    strip.style.animationDelay='0ms';
+    strip.style.transition='none';
+    strip.style.transform='translateY('+cur+'px)';
+    void strip.offsetHeight;
+
+    strip.style.transition='transform '+duration+'ms '+easing;
+    strip.style.transform='translateY('+y+'px)';
+
+    setTimeout(function(){
+      const reel=strip.parentElement;
+      reel.classList.add('bump');
+      setTimeout(function(){ reel.classList.remove('bump') },180);
+      resolve();
+    },duration);
+  });
+}
+
+/* ── 조합 ────────────────────────────────────────────────── */
+function comboJackpot(){ return [UNIV,UNIV,UNIV]; }
+function comboSecond(){ const t=Math.floor(Math.random()*UNIV); return [t,t,t]; }
+function comboLose(){
+  if(Math.random()<0.30){                        // "아깝다" 연출
+    const other=Math.floor(Math.random()*UNIV);
+    const arr=[UNIV,UNIV,other];
+    if(Math.random()<0.5){ arr[2]=UNIV; arr[Math.floor(Math.random()*2)]=other; }
+    return arr;
+  }
+  let a,b,c;
+  do{
+    a=Math.floor(Math.random()*SYMBOLS.length);
+    b=Math.floor(Math.random()*SYMBOLS.length);
+    c=Math.floor(Math.random()*SYMBOLS.length);
+  }while(a===b&&b===c);
+  return [a,b,c];
+}
+
+/* ── 서버 ────────────────────────────────────────────────── */
+async function askServer(){
+  if(!APPS_SCRIPT_URL) return { ok:true, jackpot:false, demo:true };
+  // Content-Type 헤더를 넣으면 CORS preflight 가 뜨는데
+  // Apps Script 는 OPTIONS 를 처리하지 못한다. 헤더 없이 보낼 것.
+  const res=await fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({team:TEAM})});
+  return await res.json();
+}
+
+/* ══════════════════════════════════════════════════════════
+   메인
+   ══════════════════════════════════════════════════════════ */
+const stage=document.getElementById('stage');
+const lever=document.getElementById('lever');
+const btn=document.getElementById('btnSpin');
+const win=document.getElementById('window');
+const tray=document.getElementById('tray');
+const lightsEls=[].slice.call(document.querySelectorAll('#lights i'));
+
+let busy=false, lightTimer=null;
+
+function runLights(on){
+  clearInterval(lightTimer);
+  if(!on){ lightsEls.forEach(function(l){l.classList.remove('on')}); return; }
+  let k=0;
+  lightTimer=setInterval(function(){
+    lightsEls.forEach(function(l,i){ l.classList.toggle('on',(i+k)%2===0) });
+    k++;
+  },170);
+}
+
+// 일반 감속 / 마지막 줄을 길게 끄는 감속
+const EASE       = 'cubic-bezier(.16,.74,.22,1)';
+const EASE_TENSE = 'cubic-bezier(.06,.86,.08,1)';
+
+const sleep = function(ms){ return new Promise(function(r){ setTimeout(r,ms) }) };
+
+function pullLever(){
+  lever.classList.remove('springing');
+  lever.classList.add('pulled');
+  setTimeout(function(){
+    lever.classList.add('springing');
+    lever.classList.remove('pulled');
+  },300);
+  stage.classList.add('shake');
+  setTimeout(function(){ stage.classList.remove('shake') },600);
+}
+
+async function spin(){
+  if(busy) return;
+  if(ONE_SPIN_PER_DEVICE && localStorage.getItem('r777_used')){
+    show(null,'이미 참여했어요','이 기기에서는 한 번만 돌릴 수 있습니다.');
+    return;
+  }
+
+  busy=true;
+  lever.disabled=true; btn.disabled=true;
+  pullLever();
+  win.classList.remove('hit');
+  tray.classList.remove('win-glow');
+  tray.textContent='SPINNING…';
+  runLights(true);
+  bulbMode='spin';
+
+  // 응답을 기다리는 동안 세 줄 모두 등속으로 돌려 둔다
+  startRoll(strips[0],520);
+  startRoll(strips[1],580);
+  startRoll(strips[2],640);
+
+  const data = await askServer().catch(function(e){ return {ok:false,error:String(e)} });
+
+  if(!data || data.ok===false){
+    await Promise.all([
+      land(strips[0],comboLose()[0],1400,EASE),
+      land(strips[1],comboLose()[1],1800,EASE),
+      land(strips[2],comboLose()[2],2200,EASE)
+    ]);
+    runLights(false); bulbMode='idle';
+    tray.textContent='ERROR';
+    await sleep(RESULT_DELAY.lose);
+    show(null,'연결 실패',
+      data && data.error==='bad_team'
+        ? '등록되지 않은 팀 코드입니다. 운영자에게 문의해 주세요.'
+        : '서버에 연결하지 못했습니다. 네트워크를 확인하고 다시 돌려 주세요.');
+    reset(); return;
+  }
+
+  let kind='lose';
+  if(data.jackpot) kind='jackpot';
+  else if(Math.random()<SECOND_PRIZE_RATE) kind='second';
+
+  const combo = kind==='jackpot' ? comboJackpot()
+              : kind==='second'  ? comboSecond()
+              : comboLose();
+
+  // 위 두 줄이 같으면 마지막 줄을 길게 끌어 긴장감을 만든다
+  const tense = combo[0]===combo[1];
+  const lastTime = tense ? TENSE_TIME : SPIN_TIME[2];
+  const lastReel = strips[2].parentElement;
+
+  if(tense){
+    setTimeout(function(){
+      lastReel.classList.add('tense');
+      bulbMode='win';
+    }, SPIN_TIME[1]);
+  }
+
+  await Promise.all([
+    land(strips[0],combo[0],SPIN_TIME[0],EASE),
+    land(strips[1],combo[1],SPIN_TIME[1],EASE),
+    land(strips[2],combo[2],lastTime, tense ? EASE_TENSE : EASE)
+  ]);
+  lastReel.classList.remove('tense');
+
+  runLights(false);
+  if(ONE_SPIN_PER_DEVICE) localStorage.setItem('r777_used','1');
+
+  // 릴 위 연출은 즉시 — 무엇이 나왔는지 먼저 보이게 한다
+  if(kind==='jackpot'){
+    bulbMode='win';
+    win.classList.add('hit');
+    tray.classList.add('win-glow');
+    tray.textContent='★ JACKPOT ★';
+  }else{
+    bulbMode='idle';
+    tray.textContent = kind==='second' ? 'NICE!' : 'TRY AGAIN';
+  }
+
+  // 결과창은 한 박자 뒤에
+  await sleep(kind==='jackpot'?RESULT_DELAY.win:RESULT_DELAY.lose);
+
+  if(kind==='jackpot'){
+    show(SYMBOLS[UNIV].img,'1등 당첨!','세 줄이 모두 맞았습니다.<br>운영 부스에서 상품을 받아가세요.'+
+      (data.remaining!=null?'<br><br>남은 상품 '+data.remaining+'개':''),true);
+  }else if(kind==='second'){
+    show(SYMBOLS[combo[0]].img, SYMBOLS[combo[0]].name+' 세 줄!',
+      '오늘 하루 재밌게 즐기면서 좋은 결과까지 가져가보세요! 💪');
+  }else{
+    show(null,'아쉽네요','다음 기회에 도전해 보세요.'+
+      (data.demo?'<br><br><small>데모 모드 — 서버 미연결</small>':''));
+  }
+  reset();
+}
+
+function reset(){
+  busy=false; lever.disabled=false; btn.disabled=false;
+}
+lever.addEventListener('click',spin);
+btn.addEventListener('click',spin);
+
+/* ── 오버레이 ────────────────────────────────────────────── */
+const overlay=document.getElementById('overlay');
+const card=document.getElementById('card');
+const resImg=document.getElementById('resImg');
+function show(img,title,body,isWin){
+  card.classList.toggle('win',!!isWin);
+  if(img){ resImg.src=img; resImg.hidden=false; }
+  else   { resImg.hidden=true; resImg.removeAttribute('src'); }
+  document.getElementById('resTitle').textContent=title;
+  document.getElementById('resBody').innerHTML=body;
+  overlay.classList.add('show');
+  document.getElementById('resClose').focus();
+}
+document.getElementById('resClose').addEventListener('click',function(){
+  overlay.classList.remove('show');
+  if(tray.textContent!=='★ JACKPOT ★') tray.textContent='PULL THE LEVER';
+});
+
+/* ── 화면 맞춤 ───────────────────────────────────────────── */
+function fit(){
+  const s=Math.min(window.innerWidth/920,window.innerHeight/850,1.5);
+  stage.style.transform='scale('+s+')';
+}
+window.addEventListener('resize',fit); fit();
+
+/* ── 운영자 패널 ─────────────────────────────────────────── */
+if(new URLSearchParams(location.search).get('admin')==='1'){
+  const box=document.getElementById('admin');
+  const info=document.getElementById('adminInfo');
+  box.classList.add('show');
+  async function call(action){
+    if(!APPS_SCRIPT_URL){ info.textContent='데모 모드 (서버 미연결)'; return; }
+    info.textContent='불러오는 중…';
+    try{
+      const d=await (await fetch(APPS_SCRIPT_URL+(action?'?action='+action:''))).json();
+      info.innerHTML='배출 '+(d.awarded!=null?d.awarded:'-')+' / 남음 '+(d.remaining!=null?d.remaining:'-')+
+        '<br>총 스핀 '+(d.spins!=null?d.spins:'-')+
+        '<br>다음 당첨 '+(d.nextWinAt||'없음')+'<br>스윕 '+(d.sweepAt||'-');
+    }catch(e){ info.textContent='조회 실패: '+e; }
+  }
+  document.getElementById('adRefresh').addEventListener('click',function(){call('')});
+  document.getElementById('adForce').addEventListener('click',function(){
+    if(confirm('강제로 1등을 1개 배출 처리할까요?')) call('force');
+  });
+  document.getElementById('adReset').addEventListener('click',function(){
+    if(confirm('카운터를 0으로 되돌릴까요?')) call('reset');
+  });
+  call('');
+}
+</script>
+</body>
+</html>
